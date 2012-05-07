@@ -1,0 +1,17 @@
+{
+    "amqp": {
+        "host": "localhost",
+        "port": 5672
+    },
+    "ingest": {
+        "queue": "scimitar",
+        "exchange": "noit.alerts",
+        "routingKey": "noit.alerts.status",
+        "retry": 1000
+    },
+    "httpServer": {
+        "port": 1339,
+        "listen": "0.0.0.0"
+    },
+    "datafile": "data.json"
+}
