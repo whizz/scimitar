@@ -14,41 +14,41 @@ RabbitMQ over AMQP is supported.
 
 The IEP has to contain there queries (shipped default with Reconnoiter):
 
-  <queries master="iep">
-    <statement id="6cc613a4-7f9c-11de-973f-db7e8ccb2e5c" provides="CheckDetails-ddl">
-      <epl>create window CheckDetails.std:unique(uuid).win:keepall() as NoitCheck</epl>
-    </statement>
-    <statement id="76598f5e-7f9c-11de-9f5b-ebb4dcb2494e" provides="CheckDetails">
-      <requires>CheckDetails-ddl</requires>
-      <epl>insert into CheckDetails select * from NoitCheck</epl>
-    </statement>
-    <statement id="ba189f08-7f99-11de-9013-733772d37479" provides="UnavailableStream">
-      <requires>CheckDetails</requires>
-      <epl>insert into UnavailableStream
-           select p.* as delta, cds.target as target, cds.module as module,
-                  cds.name as name, p.s.uuid as uuid
-           from pattern [ every
-                          s=NoitStatus(availability='A') ->
-                          ( n0 = NoitStatus(uuid=s.uuid, availability='U')
-                            and not NoitStatus(uuid=s.uuid, availability='A'))
-                        ].std:lastevent() as p
-           inner join CheckDetails as cds on cds.uuid = p.s.uuid
-      </epl>
-    </statement>
-    <query id="ce6bf8d2-3dd7-11de-a45c-a7df160cba9e" topic="status">
-      <epl>select * from NoitStatus</epl>
-    </query>
-  </queries>
+    <queries master="iep">
+      <statement id="6cc613a4-7f9c-11de-973f-db7e8ccb2e5c" provides="CheckDetails-ddl">
+        <epl>create window CheckDetails.std:unique(uuid).win:keepall() as NoitCheck</epl>
+      </statement>
+      <statement id="76598f5e-7f9c-11de-9f5b-ebb4dcb2494e" provides="CheckDetails">
+        <requires>CheckDetails-ddl</requires>
+        <epl>insert into CheckDetails select * from NoitCheck</epl>
+      </statement>
+      <statement id="ba189f08-7f99-11de-9013-733772d37479" provides="UnavailableStream">
+        <requires>CheckDetails</requires>
+        <epl>insert into UnavailableStream
+             select p.* as delta, cds.target as target, cds.module as module,
+                    cds.name as name, p.s.uuid as uuid
+             from pattern [ every
+                            s=NoitStatus(availability='A') ->
+                            ( n0 = NoitStatus(uuid=s.uuid, availability='U')
+                              and not NoitStatus(uuid=s.uuid, availability='A'))
+                          ].std:lastevent() as p
+             inner join CheckDetails as cds on cds.uuid = p.s.uuid
+        </epl>
+      </statement>
+      <query id="ce6bf8d2-3dd7-11de-a45c-a7df160cba9e" topic="status">
+        <epl>select * from NoitStatus</epl>
+      </query>
+    </queries>
 
 ### 2. Node.js
 
 Scimitar runs in node.js and requires amqp and nconf modules, installed by npm.
 In RHEL 6 or CentOS 6, one can install all required stuff thus:
 
-  wget http://nodejs.tchol.org/repocfg/el/nodejs-stable-release.noarch.rpm
-  yum -y localinstall --nogpgcheck nodejs-stable-release.noarch.rpm
-  yum -y --disablerepo=epel install nodejs-compat-symlinks npm
-  npm -g install amqp nconf
+    wget http://nodejs.tchol.org/repocfg/el/nodejs-stable-release.noarch.rpm
+    yum -y localinstall --nogpgcheck nodejs-stable-release.noarch.rpm
+    yum -y --disablerepo=epel install nodejs-compat-symlinks npm
+    npm -g install amqp nconf
   
 ### 3. Scimitar
 
@@ -61,18 +61,18 @@ Example:
 If you want to change the host where your queue resides at, create a config.json
 file like this:
 
-  { 
-    "amqp": { 
-      "host": "rabbitmq" 
-    } 
-  }
+    { 
+      "amqp": { 
+        "host": "rabbitmq" 
+      } 
+    }
 
 ## Running
 
 All that is necessary is to run:
 
-  cd /opt/scimitar
-  node scimitar
+    cd /opt/scimitar
+    node scimitar
 
 If you want to run this in production, you will require some more sphisticated
 method to start. For RHEL 6, you are covered. in the util sub-directory there
