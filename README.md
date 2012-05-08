@@ -12,7 +12,7 @@ You need to have Reconnoiter running, stratcon passing checks to IEP and IEP
 must be spitting check status events out back into the queue. Currently, only
 RabbitMQ over AMQP is supported.
 
-The IEP has to contain there queries (shipped default with Reconnoiter):
+The IEP has to contain these queries (shipped default with Reconnoiter):
 
     <queries master="iep">
       <statement id="6cc613a4-7f9c-11de-973f-db7e8ccb2e5c" provides="CheckDetails-ddl">
@@ -111,4 +111,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   * Michal Táborský <michal@taborsky.cz>
   * you?
-      
+
+# What's with the name?
+
+If you can believe it, here is what Wikipedia says:
+
+> FV107 Scimitar is an armoured reconnaissance vehicle (sometimes classed as a 
+light tank) used by the British Army. It is very similar to the FV101 Scorpion 
+but mounts a high velocity 30 mm L21 RARDEN cannon instead of a 76 mm gun. It 
+was issued to Royal Armoured Corps, Armoured Regiments in the Reconnaissance 
+role. Each Regiment had a Close Reconnaissance Squadron of 5 Troops of 8 FV107 
+Scimitar.
