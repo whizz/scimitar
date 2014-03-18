@@ -1,5 +1,6 @@
 var settings,
-	data;
+	data,
+	logger;
 
 function increment(arr, counter, inc) {
 
@@ -29,12 +30,9 @@ exports.parseMessage = function(messageRaw) {
 		
 	} catch (e) {
 		// some problem there, ignore this message
-		console.error('Error processing message: ' + e.message);
-		if (settings.get('DEBUG')) {
-			console.error('Stack trace: ' + e.stack);
-			console.error('Message was: ' + messageRaw);
-		}
-		
+		logger.error('Error processing message: ' + e.message);
+		logger.debug('Stack trace: ' + e.stack);
+		logger.debug('Message was: ' + messageRaw);
 		increment(data.counters, "invalid");
 	}
 };
@@ -90,8 +88,9 @@ exports.datastore = function(ds) {
 	return this;
 };
 
-exports.settings = function(s) {
+exports.settings = function(s, l) {
 	settings = s;
+	logger = l;
 	return this;
 };
 

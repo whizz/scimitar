@@ -10,20 +10,18 @@
 var util = require('util');
 var amqp = require('amqp');
 var fs = require('fs');
-var http = require('http');
-var url = require('url');
-var querystring = require('querystring');
 var nconf = require('nconf');
 var path = require('path');
 var os = require('os');
 var datastore = require('./libs/datastore.js');
 var events = require('./libs/events.js');
+var log4js = require('log4js');
+var express = require('express');
 
 var connection;
 
 function loadConfig() {
 	
-	console.log("Loading configuration");
 	nconf.argv()
 		 .file( { file: path.join(__dirname, 'config.json') } );
 	nconf.defaults(defaults);
@@ -31,82 +29,12 @@ function loadConfig() {
 	return global.settings;
 }
 
-function response (req, res) {
-	
-	//some private methods
-	var serverError = function(code, content) {
-		res.writeHead(code, {
-			'Content-Type' : 'text/plain'
-		});
-		res.end(content);
-	};
-
-	var renderHtml = function(content) {
-		res.writeHead(200, {
-			'Content-Type' : 'text/html'
-		});
-		res.end(content, 'utf-8');
-	};
-	
-	var renderJSON = function(content) {
-		res.writeHead(200, {
-			'Content-Type' : 'application/json'
-		});
-		res.end(JSON.stringify(content, null, 2), 'utf-8');
-	};
-
-	// parse URL
-	var url_parts = url.parse(req.url);
-	// parse query
-	//var raw = querystring.parse(url_parts.query);
-	
-	if (url_parts.pathname == '/') {
-		url_parts.pathname = "/index.html";
-	}
-	
-	switch (url_parts.pathname) {
-	
-	case '/overview':
-		events.statusOverview(renderJSON);
-		break;
-
-	case '/settings':
-		renderJSON(settings.stores.file.store);
-		break;
-	
-	case '/exit':
-		renderJSON({status: "OK"});
-		process.exit();
-		break;
-	
-	case '/flush':
-		events.flushChecks(renderJSON);
-		break;
-		
-	default:
-
-		// generic methods
-		subs = url_parts.pathname.match(/^\/data\/(.+)/);
-		if ( subs != null && subs[1] != null) {
-			events.outputRaw(subs[1], renderJSON);
-			return;
-		}
-
-		fs.readFile(__dirname + "/public" + url_parts.pathname, function(error, content) {
-			if (error) {
-				serverError(404, "404/Not found");
-			} else {
-				renderHtml(content);
-			}
-		});
-		break;
-	}
-		
-};
 
 function ingestConnect() {
-	console.log("Connecting over amqp to " + settings.get("amqp:host"));
-	connection = amqp.createConnection(settings.get("amqp"));
+	var connProps = settings.get("amqp");
+	connProps.clientProperties = { product: "scimitar" };
+	logger.info("Connecting over amqp to " + settings.get("amqp:host"));
+	connection = amqp.createConnection(connProps);
 	global.connection = connection;
 	
 	//Wait for connection to become established.
@@ -118,17 +46,15 @@ function ingestConnect() {
 				queue.subscribe( function(message) {
 					events.parseMessage(message.data.toString());
 				});
-				console.log("Listening on queue " + queue.name);
+				logger.info("Listening on queue " + queue.name);
 			} 
 		);
 	});
 	connection.on('close', function(had_error) {
-		console.error("Connection to "+ settings.get("amqp:host") + " closed, will try again in " 
-				+ settings.get("ingest:retry") + "ms (error: " + had_error + ")");
-		setTimeout(ingestConnect, settings.get("ingest:retry"));
+		console.error("Connection to "+ settings.get("amqp:host") + " closed.");
 	});
 	connection.on('error', function(error) {
-		console.error("Connection to "+ settings.get("amqp:host")+ " failed");
+		console.error("Connection to "+ settings.get("amqp:host")+ " failed: " + error);
 	});
 }
 
@@ -137,31 +63,67 @@ function ingestConnect() {
 var defaults = JSON.parse(fs.readFileSync(path.join(__dirname, 'defaults.json')));
 var settings = loadConfig();
 
+log4js.configure(settings.get("log4js"));
+var logger = log4js.getLogger('scimitar');
+logger.info("Scimitar starting...");
+
 // initialize data store
+datastore.setLogger(logger);
 datastore.setTemplate( JSON.parse(fs.readFileSync(path.join(__dirname, 'datatemplate.json'))) );
 datastore.load(path.join(__dirname, settings.get("datafile")));
 var data = datastore.data();
 
 // initialize events handling lib
-events.settings(settings).datastore(data);
+events.settings(settings, logger).datastore(data);
 
 // connect ingest queue and listen for messages
 ingestConnect();
 
-// create http server
-http.createServer(response).listen(settings.get("httpServer:port"), settings.get("httpServer:listen"));
-console.log('HTTP server listening on ' + settings.get("httpServer:listen") + ':' + settings.get("httpServer:port"));
+var app = express();
+app.use(log4js.connectLogger(logger, { level: 'auto' }));
+app.use(express.static(__dirname + '/public'));
+
+app.get('/', function(req, res) {
+	res.sendfile( path.join( __dirname, 'public/index.html' ) );
+});
+
+app.get('/overview', function(req, res) {
+	events.statusOverview(function(data) {
+		res.json(data);
+	});
+});
+
+app.get('/settings', function(req, res) {
+	res.json(settings.stores.file.store);
+});
+
+app.get('/flush', function(req, res) {
+	events.flushChecks(function(data) {
+		res.json(data);
+	});
+});
+
+app.get('/data/:key', function(req, res) {
+	if (data[req.params.key] != null) {
+		res.json(data[req.params.key]);
+	} else {
+		res.status(404);
+	}
+});
+app.listen(settings.get("httpServer:port"));
+		
+logger.info('HTTP server listening on ' + settings.get("httpServer:listen") + ':' + settings.get("httpServer:port"));
 
 // handle signals
 process.on('SIGHUP', function() {
-	console.log('Got SIGHUP, reloading configuration');
+	logger.info('Got SIGHUP, reloading configuration');
 	loadConfig();
 });
 
 process.on('exit', function() {
-	console.log('Saving data');
+	logger.info('Saving data');
 	datastore.saveSync(path.join(__dirname, settings.get("datafile")));
-	console.log('Exiting');
+	logger.info('Exiting');
 });
 
-console.log("Ready");
+logger.info("Ready");

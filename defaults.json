@@ -13,5 +13,6 @@
         "port": 1339,
         "listen": "0.0.0.0"
     },
-    "datafile": "data.json"
+    "datafile": "data.json",
+    "log4js": {}
 }

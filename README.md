@@ -42,14 +42,9 @@ The IEP has to contain these queries (shipped default with Reconnoiter):
 
 ### 2. Node.js
 
-Scimitar runs in node.js and requires amqp and nconf modules, installed by npm.
-In RHEL 6 or CentOS 6, one can install all required stuff thus:
-
-    wget http://nodejs.tchol.org/repocfg/el/nodejs-stable-release.noarch.rpm
-    yum -y localinstall --nogpgcheck nodejs-stable-release.noarch.rpm
-    yum -y --disablerepo=epel install nodejs-compat-symlinks npm
-    npm -g install amqp nconf
-  
+Scimitar runs in node.js and requires some modules, installed by npm. I am
+sure you know how to get node.js and npm for your platform.
+ 
 ### 3. Scimitar
 
 Clone the Scimitar repository somewhere, for example into /opt/scimitar. The
@@ -72,10 +67,11 @@ file like this:
 All that is necessary is to run:
 
     cd /opt/scimitar
+    npm install
     node scimitar
 
-If you want to run this in production, you will require some more sphisticated
-method to start. For RHEL 6, you are covered. in the util sub-directory there
+If you want to run this in production, you will require some more sophisticated
+method to start. For RHEL 6, you are covered. In the util sub-directory there
 is an upstart script. You just need to copy this to /etc/init and run:
 
   start node-scimitar
@@ -109,7 +105,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Author(s)
 
-  * Michal Táborský <michal@taborsky.cz>
+  * Michal Taborsky <michal@taborsky.cz>
   * you?
 
 # What's with the name?

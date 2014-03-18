@@ -2,6 +2,7 @@ var fs = require('fs');
 
 var template = {};
 var store = {};
+var logger;
 
 exports.load = function(file) {
 	
@@ -9,9 +10,9 @@ exports.load = function(file) {
 		content = fs.readFileSync(file);
 		var newdata = JSON.parse(content);
 		store = newdata;
-		console.log('Data loaded from file ' + file);
+		logger.info('Data loaded from file ' + file);
 	} catch (e) {
-		console.error('Did not load data from file ' + file + ', using template');
+		logger.warn('Did not load data from file ' + file + ', using template');
 	}
 	for (key in template) {
 		if (store[key] == null) {
@@ -24,10 +25,10 @@ exports.load = function(file) {
 exports.save = function(file, callback) {
 	fs.writeFile(file, JSON.stringify(store, null, 2), function(error) {
 		if (error) {
-			console.error('Error writing data file ' + file);
+			logger.error('Error writing data file ' + file);
 			callback( JSON.stringify( { status : "FAIL" } ));
 		} else {
-			console.log('Data saved to file ' + file);
+			logger.info('Data saved to file ' + file);
 			callback( JSON.stringify( { status : "OK" } ));
 		}
 	});
@@ -46,4 +47,9 @@ exports.setTemplate = function(newTemplate) {
 
 exports.data = function() {
 	return store;
+};
+
+exports.setLogger = function(l) {
+	logger = l;
+	return this;
 };

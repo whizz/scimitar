@@ -1,0 +1,12 @@
+{
+	"name": "Scimitar",
+	"description": "Reconnoiter check console",
+	"author": "Michal Taborsky <michal@taborsky.cz>",
+	"readmeFilename": "README.md",
+	"dependencies": {
+		"nconf": ">= 0.6.9",
+		"amqp": ">= 0.1.8",
+		"log4js": ">= 0.6.10",
+		"express": ">= 3.4.8"
+	  }
+}
